@@ -78,12 +78,12 @@ spct_ret_t spct_component_register(spct_component_handle_t pt_component) {
     }
 
     pt_component->inited = false;
-    pt_component->index = component_num;
+    pt_component->id = component_num;
     components[component_num++] = pt_component;
 
-    SPCT_LOGI(COMPONENT_LOG_TAG, "registering component %s", pt_component->id);
+    SPCT_LOGI(COMPONENT_LOG_TAG, "registering component %s", pt_component->name);
 
-    return SPCT_FORWARD_ESP_RETURN( esp_event_handler_instance_register_with(event_loop_handle, pt_component->id, ESP_EVENT_ANY_ID, event_handler_dispatcher, (void*) pt_component, NULL) );
+    return SPCT_FORWARD_ESP_RETURN( esp_event_handler_instance_register_with(event_loop_handle, pt_component->name, ESP_EVENT_ANY_ID, event_handler_dispatcher, (void*) pt_component, NULL) );
 };
 
 /*
@@ -101,8 +101,8 @@ spct_ret_t spct_init_components() {
     while(current_index < component_num) {
         component = components[current_index++];
 
-        SPCT_LOGI(COMPONENT_LOG_TAG, "dispatching init task for component %s", component->id);
-        ifnt(component->inited) assert(pdPASS == xTaskCreate(init_rtos_wrapper, component->id, SPCT_COMPONENT_INIT_STACK_DEPTH, (void*) component->init, tskIDLE_PRIORITY, NULL));
+        SPCT_LOGI(COMPONENT_LOG_TAG, "dispatching init task for component %s", component->name);
+        ifnt(component->inited) assert(pdPASS == xTaskCreate(init_rtos_wrapper, component->name, SPCT_COMPONENT_INIT_STACK_DEPTH, (void*) component->init, tskIDLE_PRIORITY, NULL));
 
         component->inited = true;
     }
@@ -120,7 +120,7 @@ spct_ret_t spct_deinit_components() {
     while(current_index < component_num) {
         component = components[current_index++];
 
-        SPCT_LOGI(COMPONENT_LOG_TAG, "deiniting task for component %s", component->id);
+        SPCT_LOGI(COMPONENT_LOG_TAG, "deiniting task for component %s", component->name);
         if(component->inited) component->deinit(); // don't dispatch asynchronously so finalisation is easier
 
         component->inited = false;
@@ -133,9 +133,9 @@ spct_ret_t spct_deinit_components() {
  *  dispatch event to component
  */
 spct_ret_t spct_system_dispatch_evt(spct_component_handle_t pt_component, spct_component_evt_t i_evt) {
-    SPCT_LOGI(COMPONENT_LOG_TAG, "dispatching evt %d to component %s", i_evt, pt_component->id);
+    SPCT_LOGI(COMPONENT_LOG_TAG, "dispatching evt %d to component %s", i_evt, pt_component->name);
 
-    return SPCT_FORWARD_ESP_RETURN( esp_event_post_to(event_loop_handle, pt_component->id, SPCT_EVENT(pt_component, i_evt), NULL, 0, (TickType_t) portMAX_DELAY) );
+    return SPCT_FORWARD_ESP_RETURN( esp_event_post_to(event_loop_handle, pt_component->name, SPCT_EVENT(pt_component, i_evt), NULL, 0, (TickType_t) portMAX_DELAY) );
 };
 
 
@@ -146,13 +146,13 @@ spct_ret_t spct_system_broadcast_evt(spct_component_handle_t pt_component, spct_
     spct_component_handle_t component = NULL;
     size_t current_index = 0;
 
-    SPCT_LOGI(COMPONENT_LOG_TAG, "broadcasting evt %d from component %s", i_evt, pt_component->id);
+    SPCT_LOGI(COMPONENT_LOG_TAG, "broadcasting evt %d from component %s", i_evt, pt_component->name);
 
     while(current_index < component_num) {
         component = components[current_index++];
 
-        if(SPCT_FIELD_GET_BIT(component->subscriptions, pt_component->index)) {
-            ifnt(SPCT_OK == SPCT_FORWARD_ESP_RETURN(esp_event_post_to(event_loop_handle, component->id, SPCT_EVENT(pt_component, i_evt), NULL, 0, (TickType_t) portMAX_DELAY))) {
+        if(SPCT_FIELD_GET_BIT(component->subscriptions, pt_component->id)) {
+            ifnt(SPCT_OK == SPCT_FORWARD_ESP_RETURN(esp_event_post_to(event_loop_handle, component->name, SPCT_EVENT(pt_component, i_evt), NULL, 0, (TickType_t) portMAX_DELAY))) {
                 SPCT_LOGE(COMPONENT_LOG_TAG, "failed to broadcast to component %d", current_index);
             }
         } 
@@ -165,9 +165,9 @@ spct_ret_t spct_system_broadcast_evt(spct_component_handle_t pt_component, spct_
  *  subscribe component to recieve other's broadcasts
  */
 spct_ret_t spct_component_subscribe_to(spct_component_handle_t pt_subscriber, spct_component_handle_t pt_broadcaster) {
-    SPCT_LOGI(COMPONENT_LOG_TAG, "subscribing component %s to %s", pt_subscriber->id, pt_subscriber->id);
+    SPCT_LOGI(COMPONENT_LOG_TAG, "subscribing component %s to %s", pt_subscriber->name, pt_subscriber->name);
 
-    SPCT_FIELD_SET_BIT(pt_subscriber->subscriptions, pt_broadcaster->index);
+    SPCT_FIELD_SET_BIT(pt_subscriber->subscriptions, pt_broadcaster->id);
 
     return SPCT_OK;
 };
@@ -223,8 +223,8 @@ static void event_handler_dispatcher(void* pv_arg, const char * pc_base, int32_t
     if(component != NULL) {
         component->evt = i_evt;
 
-        SPCT_LOGI(COMPONENT_LOG_TAG, "calling cb for component %s with event %d", component->id, component->evt);
-        assert(pdPASS == xTaskCreate(handler_rtos_wrapper, component->id, SPCT_COMPONENT_HANDLER_STACK_DEPTH, (void*) component, tskIDLE_PRIORITY + 2, NULL));
+        SPCT_LOGI(COMPONENT_LOG_TAG, "calling cb for component %s with event %d", component->name, component->evt);
+        assert(pdPASS == xTaskCreate(handler_rtos_wrapper, component->name, SPCT_COMPONENT_HANDLER_STACK_DEPTH, (void*) component, tskIDLE_PRIORITY + 2, NULL));
     } else {
         SPCT_LOGE(COMPONENT_LOG_TAG, "component undefined");
     }

@@ -14,14 +14,14 @@
 #define SPCT_COMPONENT_DEINIT_STACK_DEPTH 1024
 #define SPCT_COMPONENT_HANDLER_STACK_DEPTH 4096
 
-#define SPCT_EVENT(component, evt) ((component->index << 8) | evt)
+#define SPCT_EVENT(component, evt) ((component->id << 8) | evt)
 
-#define SPCT_DECLARE_COMPONENT(name) \
-    extern spct_component_handle_t name
+#define SPCT_DECLARE_COMPONENT(object) \
+    extern spct_component_handle_t object
 
-#define SPCT_DEFINE_COMPONENT(name, i, d, c, s) \
-    static spct_component_t __spct_##name##_component = { .init = i, .deinit = d, .cb = c, .id = s }; \
-    spct_component_handle_t name = &__spct_##name##_component
+#define SPCT_DEFINE_COMPONENT(object, initialise, deinitialise, handler, string) \
+    static spct_component_t __spct_##object##_component = { .init = initialise, .deinit = deinitialise, .cb = handler, .name = string }; \
+    spct_component_handle_t object = &__spct_##object##_component
 
 
 /*
@@ -53,7 +53,7 @@ typedef const char* spct_component_name_t;
 /*
  *  component index
  */
-typedef uint32_t spct_component_index_t;
+typedef uint32_t spct_component_id_t;
 
 /*
  *  component structure
@@ -77,7 +77,7 @@ typedef struct {
     /*
      *  string identifier, used as esp_event_base_t and in logging
      */
-    spct_component_name_t id;
+    spct_component_name_t name;
 
     /*
      *  boolean to signal initialisation of component
@@ -90,9 +90,9 @@ typedef struct {
     spct_component_evt_t evt;
 
     /*
-     *  index for subscriptions
+     *  id for subscriptions
      */
-    spct_component_index_t index;
+    spct_component_id_t id;
 
     /*
      *  bitfield for broadcast subscriptions
