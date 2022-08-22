@@ -23,8 +23,8 @@ static spct_ret_t touch_event(spct_component_evt_t);
 static void touch_dispatcher(void*);
 static void touch_isr(void*);
 
-static spct_semphr_t touch_semphr;
-static spct_group_t touch_group;
+static spct_accumtr_t touch_accumtr;
+static spct_field_t touch_field;
 
 static time_t isr_time = 0;
 
@@ -89,26 +89,26 @@ static spct_ret_t touch_event(spct_component_evt_t evt) {
 static void touch_dispatcher(void* pv_arg) {
     time_t time =  (time_t) pv_arg;
 
-    SPCT_GROUP_SET_BIT(touch_group, TOUCH_HANDLING_BIT);
-    SPCT_SEMPHR_TAKE(touch_semphr);
+    SPCT_FIELD_SET_BIT(touch_field, TOUCH_HANDLING_BIT);
+    SPCT_ACCUMTR_DEC(touch_accumtr);
 
     vTaskDelay(pdMS_TO_TICKS(150));
 
-    ifnt(SPCT_SEMPHR_ZERO(touch_semphr)) {
-        spct_system_evt_dispatch(touch, SPCT_DOUBLE_TAP);
+    ifnt(SPCT_ACCUMTR_ZERO(touch_accumtr)) {
+        spct_system_dispatch_evt(touch, SPCT_DOUBLE_TAP);
     } else {
         if(time > 2500) {
-            spct_system_evt_dispatch(touch, SPCT_HOLD_TAP);
+            spct_system_dispatch_evt(touch, SPCT_HOLD_TAP);
         } else if (time < 500) {
-            spct_system_evt_dispatch(touch, SPCT_SINGLE_TAP);
+            spct_system_dispatch_evt(touch, SPCT_SINGLE_TAP);
         } else {
-            spct_system_evt_dispatch(touch, SPCT_LONG_TAP);
+            spct_system_dispatch_evt(touch, SPCT_LONG_TAP);
         }
     }
 
-    whilnt(SPCT_SEMPHR_ZERO(touch_semphr)) SPCT_SEMPHR_TAKE(touch_semphr);
+    whilnt(SPCT_ACCUMTR_ZERO(touch_accumtr)) SPCT_ACCUMTR_DEC(touch_accumtr);
 
-    SPCT_GROUP_CLEAR_BIT(touch_group, TOUCH_HANDLING_BIT);
+    SPCT_FIELD_CLEAR_BIT(touch_field, TOUCH_HANDLING_BIT);
 
     vTaskDelete(NULL);
 };
@@ -119,13 +119,13 @@ static void IRAM_ATTR touch_isr(void* pv_arg) {
     touch_pad_clear_status();
 
     if((status >> SPCT_TOUCH_PAD) & true) {
-        SPCT_GROUP_TOGGLE_BIT(touch_group, TOUCH_ACTIVE_BIT);
+        SPCT_FIELD_TOGGLE_BIT(touch_field, TOUCH_ACTIVE_BIT);
 
-        if(SPCT_GROUP_GET_BIT(touch_group, TOUCH_ACTIVE_BIT)) {
+        if(SPCT_FIELD_GET_BIT(touch_field, TOUCH_ACTIVE_BIT)) {
             touch_pad_set_trigger_mode(TOUCH_TRIGGER_ABOVE);
 
-            if(SPCT_GROUP_GET_BIT(touch_group, TOUCH_HANDLING_BIT)) {
-                SPCT_SEMPHR_GIVE(touch_semphr);
+            if(SPCT_FIELD_GET_BIT(touch_field, TOUCH_HANDLING_BIT)) {
+                SPCT_ACCUMTR_INC(touch_accumtr);
             }
 
             isr_time = esp_timer_get_time();
@@ -135,9 +135,9 @@ static void IRAM_ATTR touch_isr(void* pv_arg) {
             
             isr_time = (esp_timer_get_time() - isr_time) >> 10;
 
-            ifnt(SPCT_GROUP_GET_BIT(touch_group, TOUCH_HANDLING_BIT)) {
+            ifnt(SPCT_FIELD_GET_BIT(touch_field, TOUCH_HANDLING_BIT)) {
                 xTaskCreate(touch_dispatcher, "dispatcher", 2048, (void*) isr_time, tskIDLE_PRIORITY, NULL);
-                SPCT_SEMPHR_GIVE(touch_semphr);
+                SPCT_ACCUMTR_INC(touch_accumtr);
             }
         }
     }

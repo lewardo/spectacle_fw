@@ -53,38 +53,38 @@
 /*
  *  simple macro to get bit from long
  */
-#define SPCT_GROUP_GET_BIT(group, bit) (((group) >> (bit)) & true)
+#define SPCT_FIELD_GET_BIT(field, bit) (((field) >> (bit)) & true)
 
 /*
  *  simple macro to set bit in long
  */
-#define SPCT_GROUP_SET_BIT(group, bit) ((void) ((group) |= (1 << (bit))))
+#define SPCT_FIELD_SET_BIT(field, bit) ((void) ((field) |= (1 << (bit))))
 
 /*
  *  simple macro to clear bit in long
  */
-#define SPCT_GROUP_CLEAR_BIT(group, bit) ((void) ((group) &= ~(1 << (bit))))
+#define SPCT_FIELD_CLEAR_BIT(field, bit) ((void) ((field) &= ~(1 << (bit))))
 
 /*
  *  simple macro to toggle bit in long
  */
-#define SPCT_GROUP_TOGGLE_BIT(group, bit) ((void) ((group) ^= (1 << (bit))))
+#define SPCT_FIELD_TOGGLE_BIT(field, bit) ((void) ((field) ^= (1 << (bit))))
 
 
 /*
  *  give counting semaphore
  */
-#define SPCT_SEMPHR_GIVE(semphr) ((void) (++semphr))
+#define SPCT_ACCUMTR_INC(accumulator) ((void) (++accumulator))
 
 /*
  *  take semaphore and return true if available, else return false
  */
-#define SPCT_SEMPHR_TAKE(semphr) (((semphr) > 0) ? --(semphr) : (void) false)
+#define SPCT_ACCUMTR_DEC(accumulator) (((accumulator) > 0) ? --(accumulator) : (void) false)
 
 /*
  *  check if semaphore is zero
  */
-#define SPCT_SEMPHR_ZERO(semphr) (((semphr) > 0) ? false : true)
+#define SPCT_ACCUMTR_ZERO(accumulator) (((accumulator) > 0) ? false : true)
 
 
 /*
@@ -98,12 +98,12 @@ typedef enum {
 /*
  *  fast deterministic ISR safe, multithreading unsafe event group without needing pxHigherPriorityTaskWoken functionality
  */
-typedef long spct_group_t;
+typedef long spct_field_t;
 
 /*
  *  fast detrminitstic ISR safe, multithreading unsafe semaphore without needing pxHigherPriorityTaskWoken functionality
  */
-typedef long spct_semphr_t;
+typedef long spct_accumtr_t;
 
 
 
