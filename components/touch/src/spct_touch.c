@@ -78,8 +78,6 @@ static spct_ret_t touch_deinit() {
 
     SPCT_LOGI(TOUCH_LOG_TAG, "tp deinit");
 
-    touch_pad_deinit();
-
     return SPCT_OK;
 }
 

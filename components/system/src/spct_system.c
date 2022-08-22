@@ -28,7 +28,7 @@ static enum {
 };
 
 static void event_handler_dispatcher(void*, const char *, int32_t, void*);
-static void init_deinit_rtos_wrapper(void*);
+static void init_rtos_wrapper(void*);
 static void handler_rtos_wrapper(void*);
 
 /*
@@ -102,7 +102,7 @@ spct_ret_t spct_init_components() {
         component = components[current_index++];
 
         SPCT_LOGI(COMPONENT_LOG_TAG, "dispatching init task for component %s", component->id);
-        ifnt(component->inited) assert(pdPASS == xTaskCreate(init_deinit_rtos_wrapper, component->id, SPCT_COMPONENT_INIT_STACK_DEPTH, (void*) component->init, tskIDLE_PRIORITY, NULL));
+        ifnt(component->inited) assert(pdPASS == xTaskCreate(init_rtos_wrapper, component->id, SPCT_COMPONENT_INIT_STACK_DEPTH, (void*) component->init, tskIDLE_PRIORITY, NULL));
 
         component->inited = true;
     }
@@ -120,8 +120,8 @@ spct_ret_t spct_deinit_components() {
     while(current_index < component_num) {
         component = components[current_index++];
 
-        SPCT_LOGI(COMPONENT_LOG_TAG, "dispatching deinit task for component %s", component->id);
-        if(component->inited) assert(pdPASS == xTaskCreate(init_deinit_rtos_wrapper, component->id, SPCT_COMPONENT_DEINIT_STACK_DEPTH, (void*) component->deinit, tskIDLE_PRIORITY, NULL));
+        SPCT_LOGI(COMPONENT_LOG_TAG, "deiniting task for component %s", component->id);
+        if(component->inited) component->deinit(); // don't dispatch asynchronously so finalisation is easier
 
         component->inited = false;
     }
@@ -179,12 +179,7 @@ spct_ret_t spct_system_start_sleep() {
     SPCT_FIELD_SET_BIT(sys_field, SYS_SLEEP_BIT);
 
     SPCT_LOGW(COMPONENT_LOG_TAG, "sleep scheduled, all events will be buffered");
-
-    while(SPCT_ACCUMTR_GET(tasks_running) > 1) {
-        taskYIELD();
-    }
-
-    SPCT_LOGI(COMPONENT_LOG_TAG, "sleep start");
+    SPCT_LOGI(COMPONENT_LOG_TAG, "sleep start, gn hun");
 
     // TODO: automatically flush buffers instead of delay
     vTaskDelay(pdMS_TO_TICKS(500));
@@ -208,10 +203,6 @@ spct_ret_t spct_system_shut_down() {
     
     spct_deinit_components();
 
-    while(SPCT_ACCUMTR_GET(tasks_running) > 1) {
-        taskYIELD();
-    }
-
     SPCT_LOGI(COMPONENT_LOG_TAG, "shudown, bye!");
 
     // TODO: automatically flush buffers instead of delay
@@ -229,21 +220,11 @@ spct_ret_t spct_system_shut_down() {
 static void event_handler_dispatcher(void* pv_arg, const char * pc_base, int32_t i_evt, void* pv_data) {
     spct_component_handle_t component = (spct_component_handle_t) pv_arg;
 
-    if(SPCT_FIELD_GET_BIT(sys_field, SYS_SLEEP_BIT)) {
-        SPCT_LOGW(COMPONENT_LOG_TAG, "cb for component %s (event %d) not yet called, sleep scheduled", component->id, component->evt);
-        taskYIELD();
-    }
-
-    if(SPCT_FIELD_GET_BIT(sys_field, SYS_SHUTDOWN_BIT)) {
-        SPCT_LOGW(COMPONENT_LOG_TAG, "cb for component %s (event %d) will never called, shutdown scheduled", component->id, component->evt);
-        return;
-    }
-
     if(component != NULL) {
         component->evt = i_evt;
 
         SPCT_LOGI(COMPONENT_LOG_TAG, "calling cb for component %s with event %d", component->id, component->evt);
-        assert(pdPASS == xTaskCreate(handler_rtos_wrapper, component->id, SPCT_COMPONENT_HANDLER_STACK_DEPTH, (void*) component, tskIDLE_PRIORITY, NULL));
+        assert(pdPASS == xTaskCreate(handler_rtos_wrapper, component->id, SPCT_COMPONENT_HANDLER_STACK_DEPTH, (void*) component, tskIDLE_PRIORITY + 2, NULL));
     } else {
         SPCT_LOGE(COMPONENT_LOG_TAG, "component undefined");
     }
@@ -252,7 +233,7 @@ static void event_handler_dispatcher(void* pv_arg, const char * pc_base, int32_t
 /*
  *  FreeRTOS task wrapper for spct_ret_t (*)(void) initialisation/deinitialisation functions
  */
-static void init_deinit_rtos_wrapper(void* pv_arg) {
+static void init_rtos_wrapper(void* pv_arg) {
     spct_component_init_deinit_t task = (spct_component_init_deinit_t) pv_arg;
 
     SPCT_ACCUMTR_INC(tasks_running);
