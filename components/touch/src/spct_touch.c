@@ -71,6 +71,8 @@ static spct_ret_t touch_init() {
 static spct_ret_t touch_deinit() {
     SPCT_LOGI(TOUCH_LOG_TAG, "tp disable");
 
+    esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TOUCHPAD);
+
     touch_pad_intr_disable();
     touch_pad_isr_deregister(touch_isr, NULL);
 
@@ -83,6 +85,15 @@ static spct_ret_t touch_deinit() {
 
 static spct_ret_t touch_event(spct_component_evt_t evt) {
     SPCT_LOGI(TOUCH_LOG_TAG, "EVT %d", evt);
+
+    if(evt == SPCT_EVENT(touch, SPCT_LONG_TAP)) {
+        spct_system_start_sleep();
+    }
+
+    if(evt == SPCT_EVENT(touch, SPCT_HOLD_TAP)) {
+        spct_system_shut_down();
+    }
+
     return SPCT_OK;
 }
 

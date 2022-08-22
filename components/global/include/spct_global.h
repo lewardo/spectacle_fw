@@ -77,6 +77,11 @@
 #define SPCT_ACCUMTR_INC(accumulator) ((void) (++accumulator))
 
 /*
+ *  get count of semaphore
+ */
+#define SPCT_ACCUMTR_GET(accumulator) (accumulator)
+
+/*
  *  take semaphore and return true if available, else return false
  */
 #define SPCT_ACCUMTR_DEC(accumulator) (((accumulator) > 0) ? --(accumulator) : (void) false)

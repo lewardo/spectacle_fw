@@ -145,4 +145,14 @@ spct_ret_t spct_system_broadcast_evt(spct_component_handle_t, spct_component_evt
  */
 spct_ret_t spct_component_subscribe_to(spct_component_handle_t, spct_component_handle_t);
 
+/*
+ *  start light sleep, default awoken by touch system
+ */
+spct_ret_t spct_system_start_sleep();
+
+/*
+ *  start deep sleep, disable all modules, require reset to restart (power off-ish senanigans)
+ */
+spct_ret_t spct_system_shut_down();
+
 #endif  /* SPCT_SYSTEM_H */
