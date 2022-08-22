@@ -84,6 +84,11 @@ spct_ret_t spct_submodule_init_registered(void) {
     spct_submodule_ptr_t component = NULL;
     uint32_t current_index = 0;
 
+    if(event_loop_handle == NULL) {
+        SPCT_LOGE(SUBMODULE_LOG_TAG, "event handler mechanism uninitialised");
+        return SPCT_ERR;
+    }
+
     while(current_index < submodule_num) {
         component = submodules[current_index++];
 
@@ -134,7 +139,7 @@ spct_ret_t spct_submodule_is_inited(spct_submodule_ptr_t pt_component) {
 /*
  *
  */
-static void event_handler_dispatcher(void* pv_arg, const char * pcc_base, int32_t i_evt, void* pv_data) {
+static void event_handler_dispatcher(void* pv_arg, const char * pc_base, int32_t i_evt, void* pv_data) {
     spct_submodule_ptr_t component = (spct_submodule_ptr_t) pv_arg;
 
     if(component != NULL) {
@@ -148,12 +153,12 @@ static void event_handler_dispatcher(void* pv_arg, const char * pcc_base, int32_
 };
 
 /*
- *  FreeRTOS task wrapper for void (*)(void) initialisation/deinitialisation functions
+ *  FreeRTOS task wrapper for spct_ret_t (*)(void) initialisation/deinitialisation functions
  */
 static void init_deinit_rtos_wrapper(void* pv_arg) {
     spct_submodule_init_deinit_t task = (spct_submodule_init_deinit_t) pv_arg;
     
-    assert(SPCT_OK == task());
+    SPCT_ERROR_CHECK(task(), "failed to run init/deinit event");
 
     vTaskDelete(NULL);
 };
@@ -164,7 +169,7 @@ static void init_deinit_rtos_wrapper(void* pv_arg) {
 static void handler_rtos_wrapper(void* pv_arg) {
     spct_submodule_ptr_t component = (spct_submodule_ptr_t) pv_arg;
 
-    assert(SPCT_OK == component->cb(component->evt));
+    SPCT_ERROR_CHECK(component->cb(component->evt), "failed to run submodule callback");
 
     vTaskDelete(NULL);
 };
