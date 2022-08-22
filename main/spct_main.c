@@ -8,4 +8,8 @@ void app_main() {
 
     spct_component_register(touch);
     spct_init_components();
+
+    spct_component_subscribe_to(touch, touch);
+
+    spct_system_broadcast_evt(touch, 10);
 }

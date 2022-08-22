@@ -19,6 +19,8 @@ static esp_event_loop_handle_t event_loop_handle = NULL;
 static spct_component_handle_t components[SPCT_COMPONENT_MAX_NUM];
 static uint32_t component_num = 0;
 
+static spct_field_t sys_field;
+
 static void event_handler_dispatcher(void*, const char *, int32_t, void*);
 static void init_deinit_rtos_wrapper(void*);
 static void handler_rtos_wrapper(void*);
@@ -29,7 +31,7 @@ static void handler_rtos_wrapper(void*);
 spct_ret_t spct_system_init() {
     esp_event_loop_args_t event_loop_args = {
         .queue_size = 12,
-        .task_name = "g_evtloop",
+        .task_name = "evtloop",
         .task_priority = tskIDLE_PRIORITY + 1,
         .task_stack_size = 2048,
         .task_core_id = 0
@@ -65,11 +67,12 @@ spct_ret_t spct_component_register(spct_component_handle_t pt_component) {
     }
 
     if(component_num >= SPCT_COMPONENT_MAX_NUM) {
-        SPCT_LOGE(COMPONENT_LOG_TAG, "max numer of components exceeded");
+        SPCT_LOGE(COMPONENT_LOG_TAG, "max numer of components registered, change config");
         return SPCT_ERR;
     }
 
     pt_component->inited = false;
+    pt_component->index = component_num;
     components[component_num++] = pt_component;
 
     SPCT_LOGI(COMPONENT_LOG_TAG, "registering component %s", pt_component->id);
@@ -80,7 +83,7 @@ spct_ret_t spct_component_register(spct_component_handle_t pt_component) {
 /*
  *  initialise components, only callable once
  */
-spct_ret_t spct_init_components(void) {
+spct_ret_t spct_init_components() {
     spct_component_handle_t component = NULL;
     uint32_t current_index = 0;
 
@@ -104,9 +107,9 @@ spct_ret_t spct_init_components(void) {
 /*
  *  initialise components, only callable once
  */
-spct_ret_t spct_deinit_components(void) {
+spct_ret_t spct_deinit_components() {
     spct_component_handle_t component = NULL;
-    uint32_t current_index = 0;
+    size_t current_index = 0;
 
     while(current_index < component_num) {
         component = components[current_index++];
@@ -123,14 +126,48 @@ spct_ret_t spct_deinit_components(void) {
 /*
  *  dispatch event to component
  */
-spct_ret_t spct_system_evt_dispatch(spct_component_handle_t pt_component, spct_component_evt_t i_evt) {
-    SPCT_LOGI(COMPONENT_LOG_TAG, "dispatching cb for component %s", pt_component->id);
+spct_ret_t spct_system_dispatch_evt(spct_component_handle_t pt_component, spct_component_evt_t i_evt) {
+    SPCT_LOGI(COMPONENT_LOG_TAG, "dispatching evt %d to component %s", i_evt, pt_component->id);
 
-    return SPCT_FORWARD_ESP_RETURN( esp_event_post_to(event_loop_handle, pt_component->id, i_evt, NULL, 0, (TickType_t) portMAX_DELAY) );
+    return SPCT_FORWARD_ESP_RETURN( esp_event_post_to(event_loop_handle, pt_component->id, SPCT_EVENT(pt_component, i_evt), NULL, 0, (TickType_t) portMAX_DELAY) );
+};
+
+
+/*
+ *  broadcast event to subscribers
+ */
+spct_ret_t spct_system_broadcast_evt(spct_component_handle_t pt_component, spct_component_evt_t i_evt) {
+    spct_component_handle_t component = NULL;
+    size_t current_index = 0;
+
+    SPCT_LOGI(COMPONENT_LOG_TAG, "broadcasting evt %d from component %s", i_evt, pt_component->id);
+
+    while(current_index < component_num) {
+        component = components[current_index++];
+
+        if(SPCT_FIELD_GET_BIT(component->subscriptions, pt_component->index)) {
+            ifnt(SPCT_OK == SPCT_FORWARD_ESP_RETURN(esp_event_post_to(event_loop_handle, component->id, SPCT_EVENT(pt_component, i_evt), NULL, 0, (TickType_t) portMAX_DELAY))) {
+                SPCT_LOGE(COMPONENT_LOG_TAG, "failed to broadcast to component %d", current_index);
+            }
+        } 
+    }
+
+    return SPCT_OK;
 };
 
 /*
- *
+ *  subscribe component to recieve other's broadcasts
+ */
+spct_ret_t spct_component_subscribe_to(spct_component_handle_t pt_subscriber, spct_component_handle_t pt_broadcaster) {
+    SPCT_LOGI(COMPONENT_LOG_TAG, "subscribing component %s to %s", pt_subscriber->id, pt_subscriber->id);
+
+    SPCT_FIELD_SET_BIT(pt_subscriber->subscriptions, pt_broadcaster->index);
+
+    return SPCT_OK;
+};
+
+/*
+ *  catch all dispatcher for events and broadcasts
  */
 static void event_handler_dispatcher(void* pv_arg, const char * pc_base, int32_t i_evt, void* pv_data) {
     spct_component_handle_t component = (spct_component_handle_t) pv_arg;
@@ -149,7 +186,7 @@ static void event_handler_dispatcher(void* pv_arg, const char * pc_base, int32_t
  *  FreeRTOS task wrapper for spct_ret_t (*)(void) initialisation/deinitialisation functions
  */
 static void init_deinit_rtos_wrapper(void* pv_arg) {
-    spct_system_init_deinit_t task = (spct_system_init_deinit_t) pv_arg;
+    spct_component_init_deinit_t task = (spct_component_init_deinit_t) pv_arg;
     
     SPCT_ERROR_CHECK(task(), "failed to run init/deinit event");
 
