@@ -1,8 +1,8 @@
 #ifndef SPCT_TOUCH_H
 #define SPCT_TOUCH_H
 
-#include "base.h"
-#include "submodule.h"
+#include "spct_global.h"
+#include "spct_system.h"
 
 #define TOUCH_LOG_TAG "touch"
 

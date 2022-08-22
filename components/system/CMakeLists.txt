@@ -1,5 +1,5 @@
 idf_component_register (
-    SRCS "src/submodule.c"
+    SRCS "src/spct_system.c"
     INCLUDE_DIRS "include"
-    REQUIRES base
+    REQUIRES global
 )

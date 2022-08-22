@@ -1,5 +1,5 @@
 idf_component_register (
-    SRCS "src/touch.c"
+    SRCS "src/spct_touch.c"
     INCLUDE_DIRS "include"
-    REQUIRES base submodule
+    REQUIRES global system
 )

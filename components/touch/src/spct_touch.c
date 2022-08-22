@@ -10,10 +10,10 @@
 
 #include "driver/touch_pad.h"
 
-#include "base.h"
-#include "submodule.h"
+#include "spct_global.h"
+#include "spct_system.h"
 
-#include "touch.h"
+#include "spct_touch.h"
 
 static spct_ret_t touch_init();
 static spct_ret_t touch_deinit();

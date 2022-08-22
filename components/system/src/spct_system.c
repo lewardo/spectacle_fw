@@ -10,8 +10,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "base.h"
-#include "submodule.h"
+#include "spct_global.h"
+#include "spct_system.h"
 
 
 static esp_event_loop_handle_t event_loop_handle = NULL;
