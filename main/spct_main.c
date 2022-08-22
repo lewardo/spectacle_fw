@@ -4,8 +4,8 @@
 #include "spct_touch.h"
 
 void app_main() {
-    spct_submodule_init();
+    spct_system_init();
 
-    spct_submodule_register(touch);
-    spct_submodule_init_registered();
+    spct_component_register(touch);
+    spct_init_components();
 }

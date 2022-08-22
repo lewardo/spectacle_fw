@@ -15,6 +15,9 @@ typedef enum {
     SPCT_HOLD_TAP
 } spct_touch_type_t;
 
-SPCT_DECLARE_SUBMODULE(touch);
+/*
+ *  extern spct_component_handle_t touch;
+ */
+SPCT_DECLARE_COMPONENT(touch);
 
 #endif /* SPCT_TOUCH_H */
