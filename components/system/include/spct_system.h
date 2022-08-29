@@ -6,7 +6,7 @@
 #include "spct_global.h"
 
 
-#define COMPONENT_LOG_TAG "component"
+#define SYSTEM_LOG_TAG "spct_system"
 
 #define SPCT_COMPONENT_MAX_NUM  8
 
