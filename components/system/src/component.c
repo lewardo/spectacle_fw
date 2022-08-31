@@ -44,7 +44,7 @@ spct_ret_t spct_component_register(spct_component_handle_t pt_component) {
     while(current_index < component_num) {
         component = components[current_index++];
 
-        ifnt(strcmp(pt_component->name, component->name) == 0) {
+        if(strcmp(pt_component->name, component->name) == 0) {
             SPCT_LOGE(SYSTEM_LOG_TAG, "cannot register component %s twice", pt_component->name);
             return SPCT_ERR;
         }
