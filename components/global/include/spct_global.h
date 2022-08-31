@@ -38,17 +38,17 @@
 /*
  *  info logging functions that forward to ESP_LOGI with additional context information
  */
-#define SPCT_LOGI(tag, fmt, ...) ESP_LOGI(tag, "(%s) " fmt, __func__, ##__VA_ARGS__);
+#define SPCT_LOGI(tag, fmt, ...) ESP_LOGI("\t"tag, "\t(%s) " fmt, __func__, ##__VA_ARGS__);
 
 /*
  *  warning logging functions that forward to ESP_LOGW with additional context information
  */
-#define SPCT_LOGW(tag, fmt, ...) ESP_LOGW(tag, "(%s) " fmt, __func__, ##__VA_ARGS__);
+#define SPCT_LOGW(tag, fmt, ...) ESP_LOGW("\t"tag, "\t(%s) " fmt, __func__, ##__VA_ARGS__);
 
 /*
  *  error logging functions that forward to ESP_LOGE with additional context information
  */
-#define SPCT_LOGE(tag, fmt, ...) ESP_LOGE(tag, "(%s) " fmt, __func__, ##__VA_ARGS__);
+#define SPCT_LOGE(tag, fmt, ...) ESP_LOGE("\t"tag, "\t(%s) " fmt, __func__, ##__VA_ARGS__);
 
 /*
  *  simple macro to get bit from long

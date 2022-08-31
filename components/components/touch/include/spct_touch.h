@@ -9,10 +9,11 @@
 #define SPCT_TOUCH_PAD TOUCH_PAD_NUM9
 
 typedef enum {
-    SPCT_SINGLE_TAP = 0,
-    SPCT_DOUBLE_TAP,
-    SPCT_LONG_TAP,
-    SPCT_HOLD_TAP
+    SPCT_SINGLE_TAP = 0,    // tap
+    SPCT_DOUBLE_TAP,        // tap tap
+    SPCT_LONG_TAP,          // taaaap
+    SPCT_HOLD_TAP,          // taaaaaaaap
+    SPCT_POWEROFF_TAP       // taaaaaaaaaathisisprobablylongenoughaaaaaaap
 } spct_touch_type_t;
 
 /*

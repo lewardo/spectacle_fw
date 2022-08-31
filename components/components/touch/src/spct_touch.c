@@ -104,15 +104,12 @@ static void touch_dispatcher(void* pv_arg) {
     vTaskDelay(pdMS_TO_TICKS(150));
 
     ifnt(SPCT_ACCUMTR_ZERO(touch_accumtr)) {
-        spct_system_dispatch_evt(touch, SPCT_DOUBLE_TAP);
+        spct_system_broadcast_evt(touch, SPCT_DOUBLE_TAP);
     } else {
-        if(time > 2500) {
-            spct_system_dispatch_evt(touch, SPCT_HOLD_TAP);
-        } else if (time < 500) {
-            spct_system_dispatch_evt(touch, SPCT_SINGLE_TAP);
-        } else {
-            spct_system_dispatch_evt(touch, SPCT_LONG_TAP);
-        }
+        if(time > 5000) spct_system_shut_down();
+        else if (time > 1500) spct_system_broadcast_evt(touch, SPCT_HOLD_TAP);
+        else if (time > 500) spct_system_broadcast_evt(touch, SPCT_LONG_TAP);
+        else spct_system_broadcast_evt(touch, SPCT_SINGLE_TAP);
     }
 
     whilnt(SPCT_ACCUMTR_ZERO(touch_accumtr)) SPCT_ACCUMTR_DEC(touch_accumtr);

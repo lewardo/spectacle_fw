@@ -86,7 +86,7 @@ spct_ret_t spct_init_components() {
         component = components[current_index++];
 
         SPCT_LOGI(SYSTEM_LOG_TAG, "dispatching init task for component %s", component->name);
-        ifnt(component->inited) assert(pdPASS == xTaskCreate(init_rtos_wrapper, component->name, SPCT_COMPONENT_INIT_STACK_DEPTH, (void*) component->init, tskIDLE_PRIORITY + 1, NULL));
+        ifnt(component->inited) assert(pdPASS == xTaskCreate(init_rtos_wrapper, component->name, SPCT_COMPONENT_INIT_STACK_DEPTH, (void*) component->init, tskIDLE_PRIORITY, NULL));
 
         component->inited = true;
     }
