@@ -28,7 +28,7 @@ static spct_field_t touch_field;
 
 static time_t isr_time = 0;
 
-static enum {
+enum {
     TOUCH_ACTIVE_BIT = 0,
     TOUCH_HANDLING_BIT
 };
@@ -84,13 +84,13 @@ static spct_ret_t touch_deinit() {
 static spct_ret_t touch_event(spct_component_evt_t evt) {
     SPCT_LOGI(TOUCH_LOG_TAG, "EVT %d", evt);
 
-    if(evt == SPCT_EVENT(touch, SPCT_LONG_TAP)) {
-        spct_system_start_sleep();
-    }
+    // if(evt == SPCT_EVENT(touch, SPCT_LONG_TAP)) {
+    //     spct_system_start_sleep();
+    // }
 
-    if(evt == SPCT_EVENT(touch, SPCT_HOLD_TAP)) {
-        spct_system_shut_down();
-    }
+    // if(evt == SPCT_EVENT(touch, SPCT_HOLD_TAP)) {
+    //     spct_system_shut_down();
+    // }
 
     return SPCT_OK;
 }

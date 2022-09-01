@@ -26,7 +26,7 @@ spct_ret_t spct_component_register(spct_component_handle_t pt_component) {
     spct_component_handle_t component = NULL;
     uint32_t current_index = 0;
 
-    if(event_loop_handle == NULL) {
+    ifnt(SPCT_FIELD_GET_BIT(system_field, SYSTEM_INITED_BIT)) {
         SPCT_LOGE(SYSTEM_LOG_TAG, "event handler mechanism uninitialised");
         return SPCT_ERR;
     }
@@ -63,6 +63,16 @@ spct_ret_t spct_component_register(spct_component_handle_t pt_component) {
  *  subscribe component to recieve other's broadcasts
  */
 spct_ret_t spct_component_subscribe_to(spct_component_handle_t pt_subscriber, spct_component_handle_t pt_broadcaster) {
+    if(pt_subscriber == NULL) {
+        SPCT_LOGE(SYSTEM_LOG_TAG, "subscriber invalid");
+        return SPCT_ERR;
+    }
+
+    if(pt_broadcaster == NULL) {
+        SPCT_LOGE(SYSTEM_LOG_TAG, "broadcaster invalid");
+        return SPCT_ERR;
+    }
+
     SPCT_LOGI(SYSTEM_LOG_TAG, "subscribing component %s to %s", pt_subscriber->name, pt_subscriber->name);
 
     SPCT_FIELD_SET_BIT(pt_subscriber->subscriptions, pt_broadcaster->id);
@@ -77,7 +87,7 @@ spct_ret_t spct_init_components() {
     spct_component_handle_t component = NULL;
     uint32_t current_index = 0;
 
-    if(event_loop_handle == NULL) {
+    ifnt(SPCT_FIELD_GET_BIT(system_field, SYSTEM_INITED_BIT)) {
         SPCT_LOGE(SYSTEM_LOG_TAG, "event handler mechanism uninitialised");
         return SPCT_ERR;
     }
@@ -86,9 +96,10 @@ spct_ret_t spct_init_components() {
         component = components[current_index++];
 
         SPCT_LOGI(SYSTEM_LOG_TAG, "dispatching init task for component %s", component->name);
-        ifnt(component->inited) assert(pdPASS == xTaskCreate(init_rtos_wrapper, component->name, SPCT_COMPONENT_INIT_STACK_DEPTH, (void*) component->init, tskIDLE_PRIORITY, NULL));
 
-        component->inited = true;
+        ifnt(component->inited) {
+            assert(pdPASS == xTaskCreate(init_rtos_wrapper, component->name, SPCT_COMPONENT_INIT_STACK_DEPTH, (void*) component, tskIDLE_PRIORITY, NULL));
+        }
     }
 
     return SPCT_OK;
@@ -100,6 +111,11 @@ spct_ret_t spct_init_components() {
 spct_ret_t spct_deinit_components() {
     spct_component_handle_t component = NULL;
     size_t current_index = 0;
+
+    ifnt(SPCT_FIELD_GET_BIT(system_field, SYSTEM_INITED_BIT)) {
+        SPCT_LOGE(SYSTEM_LOG_TAG, "event handler mechanism uninitialised");
+        return SPCT_ERR;
+    }
 
     while(current_index < component_num) {
         component = components[current_index++];

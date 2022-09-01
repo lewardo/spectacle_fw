@@ -19,6 +19,8 @@
 esp_event_loop_handle_t event_loop_handle = NULL;
 spct_accumtr_t tasks_running;
 
+spct_field_t system_field;
+
 
 spct_ret_t spct_system_init() {
     esp_event_loop_args_t event_loop_args = {
@@ -29,6 +31,15 @@ spct_ret_t spct_system_init() {
         .task_core_id = 0
     };
 
+    if(SPCT_FIELD_GET_BIT(system_field, SYSTEM_INITED_BIT)) {
+        SPCT_LOGE(SYSTEM_LOG_TAG, "event handler mechanism already initialised");
+        return SPCT_ERR;
+    }
+
+    SPCT_FIELD_SET_BIT(system_field, SYSTEM_INITED_BIT);
+
+    SPCT_LOGI(SYSTEM_LOG_TAG, "creating event handler dispatcher thing");
+
     return SPCT_FORWARD_ESP_RETURN( esp_event_loop_create(&event_loop_args, &event_loop_handle) );
 };
 
@@ -36,10 +47,22 @@ spct_ret_t spct_system_init() {
  *  deinitialise the component event mechanism
  */
 spct_ret_t spct_system_deinit() {
-    if(event_loop_handle == NULL) {
+    size_t current_index = 0;
+
+    ifnt(SPCT_FIELD_GET_BIT(system_field, SYSTEM_INITED_BIT)) {
         SPCT_LOGE(SYSTEM_LOG_TAG, "event handler mechanism uninitialised");
         return SPCT_ERR;
     }
+
+    while(current_index < component_num) {
+        components[current_index++] = NULL;
+    }
+
+    component_num = 0;
+
+    SPCT_FIELD_CLEAR_BIT(system_field, SYSTEM_INITED_BIT);
+
+    SPCT_LOGI(SYSTEM_LOG_TAG, "deleting event handler dispatcher thing");
 
     return SPCT_FORWARD_ESP_RETURN( esp_event_loop_delete(event_loop_handle) );
 };
@@ -48,6 +71,11 @@ spct_ret_t spct_system_deinit() {
  *  dispatch event to component
  */
 spct_ret_t spct_system_dispatch_evt(spct_component_handle_t pt_component, spct_component_evt_t i_evt) {
+    ifnt(SPCT_FIELD_GET_BIT(system_field, SYSTEM_INITED_BIT)) {
+        SPCT_LOGE(SYSTEM_LOG_TAG, "event handler mechanism uninitialised");
+        return SPCT_ERR;
+    }
+
     SPCT_LOGI(SYSTEM_LOG_TAG, "dispatching evt %d to component %s", i_evt, pt_component->name);
 
     return SPCT_FORWARD_ESP_RETURN( esp_event_post_to(event_loop_handle, pt_component->name, SPCT_EVENT(pt_component, i_evt), NULL, 0, (TickType_t) portMAX_DELAY) );
@@ -60,6 +88,11 @@ spct_ret_t spct_system_dispatch_evt(spct_component_handle_t pt_component, spct_c
 spct_ret_t spct_system_broadcast_evt(spct_component_handle_t pt_component, spct_component_evt_t i_evt) {
     spct_component_handle_t component = NULL;
     size_t current_index = 0;
+
+    ifnt(SPCT_FIELD_GET_BIT(system_field, SYSTEM_INITED_BIT)) {
+        SPCT_LOGE(SYSTEM_LOG_TAG, "event handler mechanism uninitialised");
+        return SPCT_ERR;
+    }
 
     SPCT_LOGI(SYSTEM_LOG_TAG, "broadcasting evt %d from component %s", i_evt, pt_component->name);
 
@@ -96,11 +129,13 @@ void event_handler_dispatcher(void* pv_arg, const char * pc_base, int32_t i_evt,
  *  FreeRTOS task wrapper for spct_ret_t (*)(void) initialisation/deinitialisation functions
  */
 void init_rtos_wrapper(void* pv_arg) {
-    spct_component_init_deinit_t task = (spct_component_init_deinit_t) pv_arg;
+    spct_component_handle_t component = (spct_component_handle_t) pv_arg;
 
     SPCT_ACCUMTR_INC(tasks_running);
-    SPCT_ERROR_CHECK(task(), "failed to run init/deinit event");
+    SPCT_ERROR_CHECK(component->init(), "failed to run init/deinit event");
     SPCT_ACCUMTR_DEC(tasks_running);
+
+    component->inited = true;
 
     vTaskDelete(NULL);
 };
