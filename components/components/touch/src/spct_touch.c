@@ -18,7 +18,7 @@
 static spct_ret_t touch_init();
 static spct_ret_t touch_deinit();
 
-static spct_ret_t touch_event(spct_component_evt_t);
+// static spct_ret_t touch_event(spct_component_evt_t);
 
 static void touch_dispatcher(void*);
 static void touch_isr(void*);
@@ -33,7 +33,7 @@ enum {
     TOUCH_HANDLING_BIT
 };
 
-SPCT_DEFINE_COMPONENT(touch, touch_init, touch_deinit, touch_event, "touch");
+SPCT_DEFINE_COMPONENT(touch, touch_init, touch_deinit, "touch");
 
 
 static spct_ret_t touch_init() {
@@ -81,19 +81,19 @@ static spct_ret_t touch_deinit() {
     return SPCT_OK;
 }
 
-static spct_ret_t touch_event(spct_component_evt_t evt) {
-    SPCT_LOGI(TOUCH_LOG_TAG, "EVT %d", evt);
+// static spct_ret_t touch_event(spct_component_evt_t evt) {
+//     SPCT_LOGI(TOUCH_LOG_TAG, "EVT %d", evt);
 
-    // if(evt == SPCT_EVENT(touch, SPCT_LONG_TAP)) {
-    //     spct_system_start_sleep();
-    // }
+//     // if(evt == SPCT_EVENT(touch, SPCT_LONG_TAP)) {
+//     //     spct_system_start_sleep();
+//     // }
 
-    // if(evt == SPCT_EVENT(touch, SPCT_HOLD_TAP)) {
-    //     spct_system_shut_down();
-    // }
+//     // if(evt == SPCT_EVENT(touch, SPCT_HOLD_TAP)) {
+//     //     spct_system_shut_down();
+//     // }
 
-    return SPCT_OK;
-}
+//     return SPCT_OK;
+// }
 
 static void touch_dispatcher(void* pv_arg) {
     time_t time =  (time_t) pv_arg;

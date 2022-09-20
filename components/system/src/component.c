@@ -13,6 +13,7 @@
 
 #include "spct_global.h"
 #include "spct_system.h"
+#include "spct_component.h"
 
 #include "system_component.h"
 
@@ -59,26 +60,26 @@ spct_ret_t spct_component_register(spct_component_handle_t pt_component) {
     return SPCT_FORWARD_ESP_RETURN( esp_event_handler_instance_register_with(event_loop_handle, pt_component->name, ESP_EVENT_ANY_ID, event_handler_dispatcher, (void*) pt_component, NULL) );
 };
 
-/*
- *  subscribe component to recieve other's broadcasts
- */
-spct_ret_t spct_component_subscribe_to(spct_component_handle_t pt_subscriber, spct_component_handle_t pt_broadcaster) {
-    if(pt_subscriber == NULL) {
-        SPCT_LOGE(SYSTEM_LOG_TAG, "subscriber invalid");
-        return SPCT_ERR;
-    }
+// /*
+//  *  subscribe component to recieve other's broadcasts
+//  */
+// spct_ret_t spct_component_subscribe_to(spct_component_handle_t pt_broadcaster, spct_component_handle_t pt_subscriber) {
+//     if(pt_subscriber == NULL) {
+//         SPCT_LOGE(SYSTEM_LOG_TAG, "subscriber invalid");
+//         return SPCT_ERR;
+//     }
 
-    if(pt_broadcaster == NULL) {
-        SPCT_LOGE(SYSTEM_LOG_TAG, "broadcaster invalid");
-        return SPCT_ERR;
-    }
+//     if(pt_broadcaster == NULL) {
+//         SPCT_LOGE(SYSTEM_LOG_TAG, "broadcaster invalid");
+//         return SPCT_ERR;
+//     }
 
-    SPCT_LOGI(SYSTEM_LOG_TAG, "subscribing component %s to %s", pt_subscriber->name, pt_subscriber->name);
+//     SPCT_LOGI(SYSTEM_LOG_TAG, "subscribing component %s to %s", pt_subscriber->name, pt_subscriber->name);
 
-    SPCT_FIELD_SET_BIT(pt_subscriber->subscriptions, pt_broadcaster->id);
+//     SPCT_FIELD_SET_BIT(pt_subscriber->subscriptions, pt_broadcaster->id);
 
-    return SPCT_OK;
-};
+//     return SPCT_OK;
+// };
 
 /*
  *  initialise components, only callable once
@@ -106,7 +107,7 @@ spct_ret_t spct_init_components() {
 };
 
 /*
- *  initialise components, only callable once
+ *  deinitialise components, only callable once
  */
 spct_ret_t spct_deinit_components() {
     spct_component_handle_t component = NULL;

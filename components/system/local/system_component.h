@@ -6,6 +6,7 @@
 
 #include "spct_global.h"
 #include "spct_system.h"
+#include "spct_component.h"
 
 extern esp_event_loop_handle_t event_loop_handle;
 
@@ -21,6 +22,6 @@ enum {
 
 void event_handler_dispatcher(void*, const char *, int32_t, void*);
 void init_rtos_wrapper(void*);
-void handler_rtos_wrapper(void*);
+// void handler_rtos_wrapper(void*);
 
 #endif // SPCT_SYS_COMPONENT_H
