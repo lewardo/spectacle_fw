@@ -1,7 +1,10 @@
-# **spectacle** firmware v1.2
+# **spectacle** firmware for esp32
+
+firmware for the spectacle smart glasses version 1  
+component framework for module and app-like development on the esp32
 
 requirements:
-* esp idf v4.4
+* esp idf v4.4+
 * cmake
 * ninja
 
