@@ -8,15 +8,11 @@
 
 #define SPCT_APP_MAX_NUM  8
 
-// #define SPCT_COMPONENT_INIT_STACK_DEPTH 2048
-// #define SPCT_COMPONENT_DEINIT_STACK_DEPTH 1024
-// #define SPCT_COMPONENT_HANDLER_STACK_DEPTH 4096
-
 #define SPCT_DECLARE_APP(object) \
     extern spct_app_handle_t object
 
-#define SPCT_DEFINE_APP(object, initialise, deinitialise, callback, string, ...) \
-    static spct_component_t __spct_##object##_app = { .init = initialise, .deinit = deinitialise, .cb = callback, .deps = { __VA_ARGS__ }, .name = string }; \
+#define SPCT_DEFINE_APP(object, initialise, deinitialise, callback, ...) \
+    static spct_component_t __spct_##object##_app = { .init = initialise, .deinit = deinitialise, .cb = callback, .deps = { __VA_ARGS__ }, .name = #object }; \
     spct_component_handle_t object = &__spct_##object##_app
 
 /*
@@ -37,7 +33,7 @@ typedef const char* spct_app_name_t;
 /*
  *  component dependencies
  */
-typedef uint32_t spct_app_deps_t;
+typedef spct_component_handle_t spct_app_deps_t[];
 
 /*
  *  component structure
@@ -67,11 +63,6 @@ typedef struct {
      *  component dependencies
      */
     spct_app_deps_t deps;
-
-    /*
-     *  bitfield for component broadcast subscriptions
-     */
-    spct_field_t subscriptions;
 } spct_app_t;
 
 /*
@@ -85,7 +76,7 @@ extern spct_app_handle_t current_app;
 
 spct_ret_t spct_app_install(spct_app_handle_t);
 
-spct_ret_t spct_app_run(spct_app_handle_t);
+spct_ret_t spct_app_launch(spct_app_handle_t);
 spct_ret_t spct_app_quit(); // go back to app index 0
 
 #endif

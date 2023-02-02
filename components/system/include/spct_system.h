@@ -21,21 +21,10 @@ spct_ret_t spct_system_init();
  */
 spct_ret_t spct_system_deinit();
 
-
-// /*
-//  *  dispatch event to component
-//  */
-// spct_ret_t spct_system_dispatch_evt(spct_component_handle_t, spct_component_evt_t);
-
 /*
  *  broadcast event to subscribers
  */
 spct_ret_t spct_system_broadcast_evt(spct_component_handle_t, spct_component_evt_t);
-
-// /*
-//  *  subscribe component to recieve other's broadcasts
-//  */
-// spct_ret_t spct_component_subscribe_to(spct_component_handle_t, spct_component_handle_t);
 
 /*
  *  start light sleep, default awoken by touch system
